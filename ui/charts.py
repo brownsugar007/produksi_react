@@ -109,7 +109,7 @@ def build_cumm_chart(
             xref="paper", yref="y",
             text=f"<b>Plan: {fmt(plan_daily_val)}</b>",
             showarrow=False,
-            font=dict(size=12, color=colors["line"], family="Rubik"),
+            font=dict(size=14, color=colors["line"], family="Rubik"),
             bgcolor="rgba(255, 255, 255, 0.7)",
             xanchor="left", yanchor="bottom"
         )
@@ -143,7 +143,7 @@ def build_cumm_chart(
                 y=show["Cumm_Actual"],
                 customdata=hover_texts,
                 mode="lines+markers",
-                name="Actual",
+                name="Actual (dalam K)",
                 line=dict(color=colors["line"], width=2.5, shape="spline", smoothing=1.3),
                 marker=dict(size=7, color=marker_colors, line=dict(color="#fff", width=1.5)),
                 hovertemplate="Actual<br><b>%{customdata}</b><extra></extra>",
@@ -157,10 +157,10 @@ def build_cumm_chart(
             fig.add_annotation(
                 x=x_coords[idx],
                 y=val,
-                text=f"<b>{val/1000:.1f}K</b>",
+                text=f"<b>{val/1000:.1f}</b>",
                 showarrow=False,
-                yshift=12,
-                font=dict(size=10, color=text_colors[idx], family="Rubik"),
+                yshift=14, # Sedikit dinaikkan agar tidak menabrak titik jika font lebih besar
+                font=dict(size=14, color=text_colors[idx], family="Rubik"),
                 opacity=0.9
             )
 
@@ -186,8 +186,8 @@ def build_cumm_chart(
         
         summary_stats = [
             {"label": "ACTUAL", "value": f"{total_actual/1000:.1f}K", "sub": "MT Hari Ini" if palette=="ch" else "BCM Hari Ini", "color": colors["marker"]},
-            {"label": "PLAN", "value": f"{plan_daily_val/1000:.1f}K", "sub": "MT Target" if palette=="ch" else "BCM Target", "color": "#1f2937"},
-            {"label": "GAP", "value": f"{gap/1000:+.1f}K", "sub": f"{(gap/plan_daily_val*100):.1f}% {'lead' if gap>=0 else 'miss'}" if plan_daily_val>0 else "", "color": gap_color},
+            {"label": "PLAN",   "value": f"{plan_daily_val/1000:.1f}K", "sub": "MT Target" if palette=="ch" else "BCM Target", "color": "#1f2937"},
+            {"label": "GAP",    "value": f"{gap/1000:+.1f}K", "sub": f"{(gap/plan_daily_val*100):.1f}% {'lead' if gap>=0 else 'miss'}" if plan_daily_val>0 else "", "color": gap_color},
             {"label": "AVG RATE", "value": f"{avg_per_hour/1000:.1f}K", "sub": "MT / hr" if palette=="ch" else "BCM / hr", "color": "#1f2937"},
         ]
 
@@ -261,15 +261,15 @@ def build_cumm_chart(
             tickmode="array", tickvals=list(range(len(OP_HOURS))), ticktext=OP_HOURS,
             range=[-0.5, len(OP_HOURS) - 0.5], showgrid=False,
             linecolor="#e5e7eb", linewidth=1,
-            tickfont=dict(size=10, color="#475569", family="Rubik"),
+            tickfont=dict(size=12, color="#475569", family="Rubik"),
         ),
         yaxis=dict(
             showgrid=True, gridcolor="#f3f4f6", gridwidth=1,
             zeroline=False, showline=False,
-            tickfont=dict(size=10, color="#9ca3af", family="Rubik"),
+            tickfont=dict(size=12, color="#9ca3af", family="Rubik"),
             # RAISED LINE: start at negative to leave room for bars (reduced gap)
             range=[-y_max * 0.25, y_max * 1.30],
-            title=dict(text=y_label, font=dict(size=10, color="#64748b")),
+            title=dict(text=y_label, font=dict(size=12, color="#64748b")),
         ),
         yaxis2=dict(
             title=dict(text="Rain (hrs)", font=dict(color="rgba(14, 165, 233, 1)", size=9)),
@@ -291,10 +291,22 @@ def build_cumm_chart(
     # 4) X-Axis Label (Time WITA)
     fig.add_annotation(
         xref="paper", yref="paper",
-        x=-0.02, y=-0.06,  # Raised from -0.11 to align with numbers
+        x=-0.01, y=-0.06,
         text="Time (WITA)",
         showarrow=False,
-        font=dict(size=8, color="#475569", family="Rubik"),
+        font=dict(size=9, color="#475569", family="Rubik"),
+        xanchor="right",
+        yanchor="middle"
+    )
+
+    # 5) Unit legend note — angka pada titik dot
+    unit_note = "● Angka titik = K (ribuan MT)" if palette == "ch" else "● Angka titik = K (ribuan BCM)"
+    fig.add_annotation(
+        xref="paper", yref="paper",
+        x=1.0, y=-0.14,  # Diturunkan sedikit dari -0.12 ke -0.14 agar sejajar horizontal dengan legend
+        text=f"<i>{unit_note}</i>",
+        showarrow=False,
+        font=dict(size=8, color="#94a3b8", family="Rubik"),
         xanchor="right",
         yanchor="middle"
     )
