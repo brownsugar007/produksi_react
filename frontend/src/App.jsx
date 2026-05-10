@@ -121,7 +121,7 @@ const KpiCard = ({ title, actualValue, targetValue, unit, delayClass, isRatio = 
 
         {/* Value */}
         <div className="mb-3">
-          <h2 className="text-[clamp(1.8rem,2.4vw,3.2rem)] leading-[1.1] font-black tracking-tighter text-slate-900 font-outfit break-words">
+          <h2 className="text-[clamp(2.2rem,3.2vw,4rem)] leading-[1.1] font-black tracking-tighter text-slate-900 font-outfit break-words">
             {formatNumber(actualValue)}
           </h2>
         </div>
