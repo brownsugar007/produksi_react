@@ -410,10 +410,9 @@ function App() {
   const getCumulativeSeries = (key, name) => {
     if (!chartData) return [];
     let sum = 0;
-    let lastValidIdx = -1;
-    for (let i = 0; i < chartData.data.length; i++) {
-      if (chartData.data[i][key] > 0) lastValidIdx = i;
-    }
+    // Use global active point count so both OB and CH charts extend to the same last hour
+    // This ensures cumulative values still appear even if one metric has no new volume in the latest hour
+    const lastValidIdx = getActivePointCount() - 1;
     const data = chartData.data.map((d, i) => {
       if (i > lastValidIdx) return null;
       sum += d[key];
