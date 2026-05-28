@@ -7,7 +7,8 @@
     "dev": "concurrently -n \"react,api\" -c \"cyan,magenta\" \"vite\" \"cd .. && .venv\\Scripts\\python.exe api_main.py\"",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "serve -s dist -l $PORT"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
@@ -19,6 +20,7 @@
     "react": "^19.2.5",
     "react-apexcharts": "^2.1.0",
     "react-dom": "^19.2.5",
+    "serve": "^14.2.6",
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {
