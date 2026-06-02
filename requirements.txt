@@ -1,14 +1,11 @@
-streamlit>=1.30.0
+# Core dependencies (Vercel Serverless Functions)
 pandas>=2.0.0
-plotly>=5.18.0
 openpyxl>=3.1.0
 python-dotenv>=1.0.0
 requests>=2.31.0
 msal>=1.26.0
 fastapi>=0.100.0
-uvicorn>=0.22.0
-gunicorn>=21.0.0
+numpy>=1.24.0
 
-# Testing
-pytest>=7.4.0
-pytest-cov>=4.1.0
+# Note: streamlit, uvicorn, gunicorn are NOT needed on Vercel
+# They are only needed for local development

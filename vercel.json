@@ -1,19 +1,15 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+  "framework": null,
+  "installCommand": "cd frontend && npm install",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/index.py": {
+      "runtime": "@vercel/python@4.0.0",
+      "maxDuration": 10
     }
-  ],
-
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -21,7 +17,44 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/frontend/$1"
+      "destination": "/$1"
     }
-  ]
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=60, stale-while-revalidate=300"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "AZURE_TENANT_ID": "@azure_tenant_id",
+    "AZURE_CLIENT_ID": "@azure_client_id",
+    "AZURE_CLIENT_SECRET": "@azure_client_secret"
+  }
 }

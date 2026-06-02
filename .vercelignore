@@ -1,0 +1,47 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Data & Cache
+data/
+logs/
+*.pkl
+*.pickle
+*.csv
+*.xlsx
+*.xls
+
+# Streamlit (not used on Vercel)
+.streamlit/
+
+# Node (frontend handles its own)
+frontend/node_modules/
+frontend/dist/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Agents
+.agents/
+frontend/.agents/
+
+# Docs (not needed for deployment)
+*.md
+!README.md
+
+# Local config
+.env
+.env.local
+frontend/.env
+frontend/.env.local
+railway.toml
+frontend/railway.toml
+token_cache.bin
+test_output.txt
+analyze_actual_file.py
