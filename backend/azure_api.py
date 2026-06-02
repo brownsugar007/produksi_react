@@ -6,8 +6,10 @@ import requests
 import msal
 import io
 import pandas as pd
-import streamlit as st
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from config import AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, CACHE_TTL_SECONDS
 
@@ -32,7 +34,7 @@ def get_access_token() -> Optional[str]:
     if "access_token" in result:
         return result["access_token"]
     
-    st.error(f"Azure Auth Error: {result.get('error_description', result.get('error'))}")
+    logger.error(f"Azure Auth Error: {result.get('error_description', result.get('error'))}")
     return None
 
 def download_excel_from_graph(url_or_id: str) -> Optional[dict[str, pd.DataFrame]]:
