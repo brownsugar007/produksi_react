@@ -74,6 +74,10 @@ def clean_types(obj):
         return None
     return obj
 
+@app.get("/api/test")
+def test_api():
+    return {"status": "ok", "message": "API is reachable"}
+
 @app.get("/api/kpi")
 def get_kpi(pit: str = Query("North JO IC"), start_date: str = Query(None), end_date: str = Query(None)):
     data = get_data()
