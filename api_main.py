@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 import pandas as pd
 from datetime import datetime
 
@@ -220,4 +219,5 @@ def get_hourly_chart(pit: str = Query("North JO IC"), start_date: str = Query(No
     })
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run("api_main:app", host="0.0.0.0", port=8000, reload=True)
