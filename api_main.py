@@ -80,9 +80,14 @@ def test_api():
 
 @app.get("/api/kpi")
 def get_kpi(pit: str = Query("North JO IC"), start_date: str = Query(None), end_date: str = Query(None)):
-    data = get_data()
-    sheets = data["sheets"]
-    input_values = data["input_values"]
+    try:
+        data = get_data()
+        sheets = data["sheets"]
+        input_values = data["input_values"]
+    except Exception as e:
+        logger.error(f"Error in /api/kpi: {e}")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail=str(e))
     
     # Resolve dates
     if start_date and end_date:
@@ -118,8 +123,13 @@ def get_kpi(pit: str = Query("North JO IC"), start_date: str = Query(None), end_
 
 @app.get("/api/charts/hourly")
 def get_hourly_chart(pit: str = Query("North JO IC"), start_date: str = Query(None), end_date: str = Query(None)):
-    data = get_data()
-    sheets = data["sheets"]
+    try:
+        data = get_data()
+        sheets = data["sheets"]
+    except Exception as e:
+        logger.error(f"Error in /api/charts/hourly: {e}")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail=str(e))
     
     # Resolve dates
     if start_date and end_date:
