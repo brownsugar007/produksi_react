@@ -201,8 +201,8 @@ function App() {
     setIsFetching(true);
     
     Promise.all([
-      axios.get(`/api/kpi?pit=${pit}`),
-      axios.get(`/api/charts/hourly?pit=${pit}`)
+      axios.get(`/api/kpi?pit=${encodeURIComponent(pit)}`),
+      axios.get(`/api/charts/hourly?pit=${encodeURIComponent(pit)}`)
     ]).then(([kpiRes, chartRes]) => {
       setKpi(kpiRes.data);
       setChartData(chartRes.data);

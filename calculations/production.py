@@ -21,41 +21,81 @@ def filter_data(sheets: dict, date_range: tuple, selected_pit: str) -> dict:
     start_date = pd.Timestamp(start_date)
     end_date = pd.Timestamp(end_date)
 
-    # OB: Check which column exists (new format uses "PIT Fix", old uses "PIT")
-    if "PIT Fix" in prod_ob.columns:
+    # Ensure Date columns are datetime (they may still be object/string after normalize)
+    for key in ["prod_ob", "prod_ch", "prod_ct"]:
+        if key in sheets and not sheets[key].empty and "Date" in sheets[key].columns:
+            if sheets[key]["Date"].dtype == "object" or str(sheets[key]["Date"].dtype) == "object":
+                sheets[key]["Date"] = pd.to_datetime(sheets[key]["Date"], errors="coerce")
+
+    # 1. Ob (Overburden)
+    if "PIT Fix" in prod_ob.columns and not prod_ob.empty:
+        # Explicitly ensure Date is datetime even if empty check bypassed
+        if str(prod_ob["Date"].dtype) != "datetime64[ns]":
+            prod_ob["Date"] = pd.to_datetime(prod_ob["Date"], errors="coerce")
+            
         ob_f = prod_ob[
             (prod_ob["Date"] >= start_date) &
             (prod_ob["Date"] <= end_date) &
             (prod_ob["PIT Fix"] == selected_pit)
         ]
-    elif "PIT" in prod_ob.columns:
+    elif "PIT" in prod_ob.columns and not prod_ob.empty:
+        if str(prod_ob["Date"].dtype) != "datetime64[ns]":
+            prod_ob["Date"] = pd.to_datetime(prod_ob["Date"], errors="coerce")
         ob_f = prod_ob[
             (prod_ob["Date"] >= start_date) &
             (prod_ob["Date"] <= end_date) &
             (prod_ob["PIT"] == selected_pit)
         ]
     else:
-        ob_f = pd.DataFrame()
+        ob_f = pd.DataFrame(columns=prod_ob.columns if not prod_ob.empty else [])
 
-    # CH: Always uses "PIT Fix" in both formats
-    if "PIT Fix" in prod_ch.columns:
+    # 2. CH (Coal Hauling)
+    if "PIT Fix" in prod_ch.columns and not prod_ch.empty:
+        if str(prod_ch["Date"].dtype) != "datetime64[ns]":
+            prod_ch["Date"] = pd.to_datetime(prod_ch["Date"], errors="coerce")
+            
         ch_f = prod_ch[
             (prod_ch["Date"] >= start_date) &
             (prod_ch["Date"] <= end_date) &
             (prod_ch["PIT Fix"] == selected_pit)
         ]
-    elif "PIT" in prod_ch.columns:
+    elif "PIT" in prod_ch.columns and not prod_ch.empty:
+        if str(prod_ch["Date"].dtype) != "datetime64[ns]":
+            prod_ch["Date"] = pd.to_datetime(prod_ch["Date"], errors="coerce")
         ch_f = prod_ch[
             (prod_ch["Date"] >= start_date) &
             (prod_ch["Date"] <= end_date) &
             (prod_ch["PIT"] == selected_pit)
         ]
     else:
-        ch_f = pd.DataFrame()
+        ch_f = pd.DataFrame(columns=prod_ch.columns if not prod_ch.empty else [])
+
+    # 3. CT (Coal Transit)
+    if "PIT Fix" in prod_ct.columns and not prod_ct.empty:
+        if str(prod_ct["Date"].dtype) != "datetime64[ns]":
+            prod_ct["Date"] = pd.to_datetime(prod_ct["Date"], errors="coerce")
+            
+        ct_f = prod_ct[
+            (prod_ct["Date"] >= start_date) &
+            (prod_ct["Date"] <= end_date) &
+            (prod_ct["PIT Fix"] == selected_pit)
+        ]
+    elif "PIT" in prod_ct.columns and not prod_ct.empty:
+        if str(prod_ct["Date"].dtype) != "datetime64[ns]":
+            prod_ct["Date"] = pd.to_datetime(prod_ct["Date"], errors="coerce")
+        ct_f = prod_ct[
+            (prod_ct["Date"] >= start_date) &
+            (prod_ct["Date"] <= end_date) &
+            (prod_ct["PIT"] == selected_pit)
+        ]
+    else:
+        ct_f = pd.DataFrame(columns=prod_ct.columns if not prod_ct.empty else [])
 
     # Rain: Filter by date and PIT
     if "rain" in sheets and not sheets["rain"].empty:
         rain_df = sheets["rain"]
+        if "Date" in rain_df.columns and rain_df["Date"].dtype == "object":
+            rain_df["Date"] = pd.to_datetime(rain_df["Date"], errors="coerce")
         # Check for PIT Fix first, then PIT
         if "PIT Fix" in rain_df.columns:
             rain_f = rain_df[
@@ -76,29 +116,6 @@ def filter_data(sheets: dict, date_range: tuple, selected_pit: str) -> dict:
             ]
     else:
         rain_f = pd.DataFrame()
-
-    # CT: Filter by date AND PIT (same as OB and CH)
-    if not prod_ct.empty:
-        # Check for PIT Fix first, then PIT
-        if "PIT Fix" in prod_ct.columns:
-            ct_f = prod_ct[
-                (prod_ct["Date"] >= start_date) &
-                (prod_ct["Date"] <= end_date) &
-                (prod_ct["PIT Fix"] == selected_pit)
-            ]
-        elif "PIT" in prod_ct.columns:
-            ct_f = prod_ct[
-                (prod_ct["Date"] >= start_date) &
-                (prod_ct["Date"] <= end_date) &
-                (prod_ct["PIT"] == selected_pit)
-            ]
-        else:
-            ct_f = prod_ct[
-                (prod_ct["Date"] >= start_date) &
-                (prod_ct["Date"] <= end_date)
-            ]
-    else:
-        ct_f = pd.DataFrame()
 
     return {"ob_f": ob_f, "ch_f": ch_f, "ct_f": ct_f, "rain_f": rain_f}
 
@@ -144,25 +161,31 @@ def calc_actuals(filtered: dict) -> dict:
     - CT uses "Production" column
     """
     # OB: Same for both formats
-    actual_ob = filtered["ob_f"]["Volume"].sum()
+    actual_ob = filtered["ob_f"]["Volume"].sum() if not filtered["ob_f"].empty and "Volume" in filtered["ob_f"].columns else 0
 
     # CH: Check which column exists and format
-    if "Netto" in filtered["ch_f"].columns:
-        # OLD FORMAT: kg -> MT conversion needed
-        actual_ch = filtered["ch_f"]["Netto"].sum() / 1000
-    elif "Volume" in filtered["ch_f"].columns:
-        # NEW FORMAT: Already in MT
-        actual_ch = filtered["ch_f"]["Volume"].sum()
+    if not filtered["ch_f"].empty:
+        if "Netto" in filtered["ch_f"].columns:
+            # OLD FORMAT: kg -> MT conversion needed
+            actual_ch = filtered["ch_f"]["Netto"].sum() / 1000
+        elif "Volume" in filtered["ch_f"].columns:
+            # NEW FORMAT: Already in MT
+            actual_ch = filtered["ch_f"]["Volume"].sum()
+        else:
+            actual_ch = 0
     else:
         actual_ch = 0
 
     # CT: Check which column exists
-    if "Production" in filtered["ct_f"].columns:
-        # OLD FORMAT: Production column
-        actual_ct = filtered["ct_f"]["Production"].sum()
-    elif "Volume" in filtered["ct_f"].columns:
-        # NEW FORMAT: Volume column
-        actual_ct = filtered["ct_f"]["Volume"].sum()
+    if not filtered["ct_f"].empty:
+        if "Production" in filtered["ct_f"].columns:
+            # OLD FORMAT: Production column
+            actual_ct = filtered["ct_f"]["Production"].sum()
+        elif "Volume" in filtered["ct_f"].columns:
+            # NEW FORMAT: Volume column
+            actual_ct = filtered["ct_f"]["Volume"].sum()
+        else:
+            actual_ct = 0
     else:
         actual_ct = 0
 
@@ -197,6 +220,9 @@ def calc_stripping_ratio(actuals: dict) -> float:
     Note: Stripping ratio yang normal biasanya berkisar 2-10 BCM/MT
     tergantung kondisi geologi dan kedalaman tambang.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     try:
         actual_ob = float(actuals["actual_ob"])
         actual_ch = float(actuals["actual_ch"])
@@ -207,11 +233,13 @@ def calc_stripping_ratio(actuals: dict) -> float:
 
         sr = actual_ob / actual_ch
 
-        # Validasi: Stripping ratio yang sangat tinggi (>50) mungkin indikasi data CH yang tidak lengkap
+        # Warning: Stripping ratio yang sangat tinggi (>50) mungkin indikasi data CH yang tidak lengkap
         if sr > 50:
-            # Ini kemungkinan masalah data, bukan kondisi geologi yang normal
-            # Kembalikan 0 sebagai indikasi data tidak valid
-            return 0.0
+            logger.warning(
+                f"Stripping ratio sangat tinggi ({sr:.2f}). "
+                f"OB={actual_ob:.0f}, CH={actual_ch:.0f}. "
+                f"Kemungkinan data CH tidak lengkap."
+            )
 
         return sr
     except (ValueError, TypeError):
@@ -228,27 +256,41 @@ def calc_global_stripping_ratio(sheets: dict, date_range: tuple) -> float:
     prod_ob = sheets["prod_ob"]
     prod_ch = sheets["prod_ch"]
     start_date, end_date = date_range
+    start_date = pd.Timestamp(start_date)
+    end_date = pd.Timestamp(end_date)
 
-    ob_range = prod_ob[
-        (prod_ob["Date"] >= start_date) &
-        (prod_ob["Date"] <= end_date)
-    ]
-    ch_range = prod_ch[
-        (prod_ch["Date"] >= start_date) &
-        (prod_ch["Date"] <= end_date)
-    ]
-
-    total_ob = ob_range["Volume"].sum()
-
-    # Check which column exists and format
-    if "Netto" in ch_range.columns:
-        # OLD FORMAT: kg -> MT conversion needed
-        total_ch = ch_range["Netto"].sum() / 1000
-    elif "Volume" in ch_range.columns:
-        # NEW FORMAT: Already in MT
-        total_ch = ch_range["Volume"].sum()
+    # Calculate total OB across all pits (from prod_ob)
+    if not prod_ob.empty:
+        if "Date" in prod_ob.columns and str(prod_ob["Date"].dtype) != "datetime64[ns]":
+            prod_ob["Date"] = pd.to_datetime(prod_ob["Date"], errors="coerce")
+        ob_range = prod_ob[
+            (prod_ob["Date"] >= start_date) &
+            (prod_ob["Date"] <= end_date)
+        ]
+        total_ob = ob_range["Volume"].sum() if "Volume" in ob_range.columns else 0.0
     else:
-        total_ch = 0
+        total_ob = 0.0
+
+    # Calculate total CH across all pits (from prod_ch)
+    if not prod_ch.empty:
+        if "Date" in prod_ch.columns and str(prod_ch["Date"].dtype) != "datetime64[ns]":
+            prod_ch["Date"] = pd.to_datetime(prod_ch["Date"], errors="coerce")
+        ch_range = prod_ch[
+            (prod_ch["Date"] >= start_date) &
+            (prod_ch["Date"] <= end_date)
+        ]
+
+        # Check which column exists and format
+        if "Volume" in ch_range.columns:
+            # NEW FORMAT: Already in MT
+            total_ch = ch_range["Volume"].sum()
+        elif "Netto" in ch_range.columns:
+            # OLD FORMAT: kg -> MT conversion needed
+            total_ch = ch_range["Netto"].sum() / 1000
+        else:
+            total_ch = 0.0
+    else:
+        total_ch = 0.0
 
     try:
         tob = float(total_ob)
@@ -282,10 +324,15 @@ def calc_coal_stock(
     start_date = pd.Timestamp(start_date)
     end_date = pd.Timestamp(end_date)
 
-    ch_range = prod_ch[
-        (prod_ch["Date"] >= start_date) &
-        (prod_ch["Date"] <= end_date)
-    ]
+    if not prod_ch.empty:
+        if str(prod_ch["Date"].dtype) != "datetime64[ns]":
+            prod_ch["Date"] = pd.to_datetime(prod_ch["Date"], errors="coerce")
+        ch_range = prod_ch[
+            (prod_ch["Date"] >= start_date) &
+            (prod_ch["Date"] <= end_date)
+        ]
+    else:
+        ch_range = pd.DataFrame(columns=prod_ch.columns)
 
     # Determine which column to use (Netto for old, Volume for new)
     if "Netto" in ch_range.columns:

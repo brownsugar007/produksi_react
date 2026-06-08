@@ -16,6 +16,7 @@ load_dotenv()
 def validate_environment():
     """
     Validate that all required environment variables are set.
+    Raises EnvironmentError if any required variable is missing.
     """
     required_vars = {
         "AZURE_TENANT_ID": "Azure AD Tenant ID",
@@ -52,6 +53,7 @@ def validate_environment():
                 st.stop()
         except:
             pass
+        raise EnvironmentError(error_msg)
 
     return True
 
@@ -90,6 +92,10 @@ FILE_IDS = {
 # ── Retry Settings ────────────────────────────────────────────
 MAX_RETRIES = 3
 RETRY_BACKOFF = 2  # seconds, exponential
+
+# ── Achievement Thresholds ────────────────────────────────────
+ACH_THRESHOLD_GOOD = 100  # >= this = green (target met)
+ACH_THRESHOLD_WARN = 80   # >= this = orange (warning)
 
 # ── Operational Hour Order ────────────────────────────────────
 OP_HOURS = [f"{h:02d}" for h in range(6, 24)] + ["O0", "O1", "O2", "O3", "O4", "O5"]

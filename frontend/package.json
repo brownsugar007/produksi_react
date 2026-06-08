@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n \"react,api\" -c \"cyan,magenta\" \"vite\" \"cd .. && .venv\\Scripts\\python.exe api_main.py\"",
+    "dev": "concurrently -n \"react,api\" -c \"cyan,magenta\" \"vite\" \"cd .. && python api_main.py\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

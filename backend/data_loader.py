@@ -68,7 +68,10 @@ def load_data(force_refresh: bool = False) -> dict:
                 if sheets:
                     result[name] = sheets
                     continue
-            except Exception:
+            except Exception as e:
+                import traceback
+                logger.error(f"Graph API download failed for {name}: {e}")
+                logger.error(traceback.format_exc())
                 pass
 
         dl = url.split("?")[0] + "?download=1"
@@ -184,14 +187,17 @@ def extract_sheets(data: dict) -> dict:
                     # Both columns exist (Vol Hauling South)
                     # Use Netto but convert it to Volume MT if Volume has empties
                     df["Volume"] = df["Netto"] / 1000
+                    df.drop(columns=["Netto"], inplace=True)  # Prevent double-conversion downstream
                     value_col = "Volume"
                 elif "Netto" in df.columns:
                     # Only Netto exists (old format in kg)
                     df["Volume"] = df["Netto"] / 1000
+                    df.drop(columns=["Netto"], inplace=True)  # Prevent double-conversion downstream
                     value_col = "Volume"
                 elif "Volume CH" in df.columns:
                     # Specifically named Volume CH
                     df["Volume"] = df["Volume CH"]
+                    df.drop(columns=["Volume CH"], inplace=True)
                     value_col = "Volume"
                 elif "Volume" in df.columns:
                     # Generic Volume exists (new format in MT)
