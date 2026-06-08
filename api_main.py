@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from datetime import datetime
+import time
+import numpy as np
 
 from backend.data_loader import load_data, extract_sheets, normalize_dataframes, parse_input_plan
 from calculations.production import (
@@ -20,7 +22,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-import time
+import logging
+logger = logging.getLogger(__name__)
+
+@app.get("/")
+def read_root():
+    return {
+        "status": "online",
+        "message": "Production Dashboard API is running!",
+        "docs_url": "/docs"
+    }
 
 # Global Memory Cache to prevent heavy processing on every request
 _data_cache = None
@@ -55,8 +66,6 @@ def get_data():
     _last_load_time = current_time
     return _data_cache
 
-import numpy as np
-
 def clean_types(obj):
     if isinstance(obj, dict):
         return {k: clean_types(v) for k, v in obj.items()}
@@ -85,7 +94,6 @@ def get_kpi(pit: str = Query("North JO IC"), start_date: str = Query(None), end_
         input_values = data["input_values"]
     except Exception as e:
         logger.error(f"Error in /api/kpi: {e}")
-        from fastapi import HTTPException
         raise HTTPException(status_code=503, detail=str(e))
     
     # Resolve dates
@@ -127,7 +135,6 @@ def get_hourly_chart(pit: str = Query("North JO IC"), start_date: str = Query(No
         sheets = data["sheets"]
     except Exception as e:
         logger.error(f"Error in /api/charts/hourly: {e}")
-        from fastapi import HTTPException
         raise HTTPException(status_code=503, detail=str(e))
     
     # Resolve dates
@@ -219,5 +226,7 @@ def get_hourly_chart(pit: str = Query("North JO IC"), start_date: str = Query(No
     })
 
 if __name__ == "__main__":
+    import os
     import uvicorn
-    uvicorn.run("api_main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("api_main:app", host="0.0.0.0", port=port, reload=True)
